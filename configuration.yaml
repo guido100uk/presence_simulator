@@ -1,0 +1,20 @@
+default_config:
+
+homeassistant:
+  packages: !include_dir_named packages
+  customize: !include customize.yaml
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+lovelace:
+  mode: yaml
+  dashboards:
+    presence-simulator:
+      mode: yaml
+      filename: presence-simulator.yaml
+      title: Presence simulator
+      icon: mdi:home-account
+      show_in_sidebar: true

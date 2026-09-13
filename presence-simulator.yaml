@@ -1,0 +1,34 @@
+title: Presence simulator
+views:
+  - title: Presence simulator
+    path: presence
+    icon: mdi:home-account
+    cards:
+      - type: entities
+        title: Presence simulator
+        show_header_toggle: false
+        entities:
+          - entity: input_boolean.presence_simulator
+            name: Presence simulator
+          - entity: input_boolean.presence_simulator_use_sunset
+            name: Presence simulator use sunset
+          - entity: input_datetime.presence_simulator_start
+            name: Presence simulator start
+          - entity: input_datetime.presence_simulator_bedtime
+            name: Presence simulator bedtime
+          - entity: input_number.presence_simulator_min_minutes
+            name: Presence simulator min minutes
+          - entity: input_number.presence_simulator_max_minutes
+            name: Presence simulator max minutes
+          - entity: input_boolean.presence_simulator_auto_away
+            name: Auto away
+          - entity: input_number.presence_simulator_away_miles
+            name: Away distance
+          - entity: input_select.presence_simulator_distance_unit
+            name: Distance unit
+          - entity: input_select.presence_simulator_ask_if_off_while_away
+            name: Ask if off while away
+          - entity: input_button.presence_simulator_off_correct
+            name: Off while away was correct
+          - entity: input_button.presence_simulator_off_mistake
+            name: Off while away was a mistake

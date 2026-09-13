@@ -1,0 +1,13 @@
+.pytest_cache/
+__pycache__/
+*.pyc
+.ps.b64
+.c1.txt
+.c2.txt
+.c3.txt
+.worktrees/
+.superpowers/
+.ps.b64
+.c1.txt
+.c2.txt
+.c3.txt

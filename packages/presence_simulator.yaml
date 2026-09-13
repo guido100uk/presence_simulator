@@ -1,0 +1,505 @@
+input_boolean:
+  presence_simulator:
+    name: Presence simulator
+    icon: mdi:home-account
+  presence_simulator_use_sunset:
+    name: Presence simulator use sunset
+    icon: mdi:weather-sunset
+  presence_simulator_auto_away:
+    name: Auto away
+    icon: mdi:map-marker-radius
+  presence_simulator_auto_holdoff:
+    name: Presence simulator auto holdoff
+    icon: mdi:pause-circle
+  presence_simulator_quiet_off:
+    name: Presence simulator quiet off
+    icon: mdi:volume-off
+  presence_simulator_confirm_off_pending:
+    name: Presence simulator confirm off pending
+    icon: mdi:help-circle
+
+input_datetime:
+  presence_simulator_start:
+    name: Presence simulator start
+    has_date: false
+    has_time: true
+    icon: mdi:clock-start
+  presence_simulator_bedtime:
+    name: Presence simulator bedtime
+    has_date: false
+    has_time: true
+    icon: mdi:clock-end
+
+input_number:
+  presence_simulator_min_minutes:
+    name: Presence simulator min minutes
+    min: 1
+    max: 120
+    step: 1
+    mode: box
+    unit_of_measurement: min
+    initial: 5
+    icon: mdi:timer-minus
+  presence_simulator_max_minutes:
+    name: Presence simulator max minutes
+    min: 1
+    max: 180
+    step: 1
+    mode: box
+    unit_of_measurement: min
+    initial: 25
+    icon: mdi:timer-plus
+  presence_simulator_away_miles:
+    name: Away distance
+    min: 0.1
+    max: 200
+    step: 0.1
+    mode: box
+    initial: 1
+    icon: mdi:map-marker-distance
+
+input_select:
+  presence_simulator_distance_unit:
+    name: Distance unit
+    options:
+      - Miles (mi)
+      - Kilometers (km)
+    initial: Miles (mi)
+    icon: mdi:ruler
+  presence_simulator_ask_if_off_while_away:
+    name: Ask if off while away
+    options:
+      - Phone
+      - Home Assistant
+      - Both
+    initial: Both
+    icon: mdi:message-question
+
+input_button:
+  presence_simulator_off_correct:
+    name: Off while away was correct
+    icon: mdi:check
+  presence_simulator_off_mistake:
+    name: Off while away was a mistake
+    icon: mdi:undo
+
+script:
+  presence_simulator_loop:
+    alias: Presence simulator loop
+    mode: restart
+    sequence:
+      - repeat:
+          while:
+            - condition: template
+              value_template: >
+                {% set use_sunset = is_state('input_boolean.presence_simulator_use_sunset', 'on') %}
+                {% set bedtime = states('input_datetime.presence_simulator_bedtime') %}
+                {% set start = states('input_datetime.presence_simulator_start') %}
+                {% set now_t = now().strftime('%H:%M:%S') %}
+                {% set after_start = is_state('sun.sun', 'below_horizon') if use_sunset else (now_t >= start) %}
+                {% set before_bed = now_t < bedtime %}
+                {{ is_state('input_boolean.presence_simulator', 'on')
+                   and after_start and before_bed }}
+          sequence:
+            - variables:
+                members: >
+                  {{
+                    expand(
+                      state_attr('light.presence_simulator_lights', 'entity_id')
+                      or []
+                    )
+                    | selectattr('entity_id', 'ne', 'light.presence_simulator_lights')
+                    | selectattr('state', 'in', ['on', 'off'])
+                    | map(attribute='entity_id')
+                    | list
+                  }}
+                wait_minutes: >
+                  {% set min = states('input_number.presence_simulator_min_minutes') | int(5) %}
+                  {% set max = states('input_number.presence_simulator_max_minutes') | int(25) %}
+                  {% if max <= min %}
+                    {% set max = min + 1 %}
+                  {% endif %}
+                  {{ range(min, max + 1) | random }}
+            - if:
+                - condition: template
+                  value_template: "{{ members | count > 0 }}"
+              then:
+                - variables:
+                    target_light: "{{ members | random }}"
+                    want_on: "{{ [true, false] | random }}"
+                - if:
+                    - condition: template
+                      value_template: "{{ want_on }}"
+                  then:
+                    - action: light.turn_on
+                      target:
+                        entity_id: "{{ target_light }}"
+                  else:
+                    - action: light.turn_off
+                      target:
+                        entity_id: "{{ target_light }}"
+            - delay:
+                minutes: "{{ wait_minutes | int }}"
+
+automation:
+  - id: presence_simulator_start_sunset
+    alias: Presence simulator start at sunset
+    trigger:
+      - trigger: sun
+        event: sunset
+    condition:
+      - condition: state
+        entity_id: input_boolean.presence_simulator
+        state: "on"
+      - condition: state
+        entity_id: input_boolean.presence_simulator_use_sunset
+        state: "on"
+      - condition: template
+        value_template: >
+          {{ now().strftime('%H:%M:%S') < states('input_datetime.presence_simulator_bedtime') }}
+    action:
+      - action: script.turn_on
+        target:
+          entity_id: script.presence_simulator_loop
+
+  - id: presence_simulator_start_time
+    alias: Presence simulator start at start time
+    trigger:
+      - trigger: time
+        at: input_datetime.presence_simulator_start
+    condition:
+      - condition: state
+        entity_id: input_boolean.presence_simulator
+        state: "on"
+      - condition: state
+        entity_id: input_boolean.presence_simulator_use_sunset
+        state: "off"
+      - condition: template
+        value_template: >
+          {{ now().strftime('%H:%M:%S') < states('input_datetime.presence_simulator_bedtime') }}
+    action:
+      - action: script.turn_on
+        target:
+          entity_id: script.presence_simulator_loop
+
+  - id: presence_simulator_start_on_switch
+    alias: Presence simulator start on switch
+    trigger:
+      - trigger: state
+        entity_id: input_boolean.presence_simulator
+        to: "on"
+    condition:
+      - condition: template
+        value_template: >
+          {% set use_sunset = is_state('input_boolean.presence_simulator_use_sunset', 'on') %}
+          {% set bedtime = states('input_datetime.presence_simulator_bedtime') %}
+          {% set start = states('input_datetime.presence_simulator_start') %}
+          {% set now_t = now().strftime('%H:%M:%S') %}
+          {% set after_start = is_state('sun.sun', 'below_horizon') if use_sunset else (now_t >= start) %}
+          {{ after_start and now_t < bedtime }}
+    action:
+      - action: script.turn_on
+        target:
+          entity_id: script.presence_simulator_loop
+
+  - id: presence_simulator_resume_on_start
+    alias: Presence simulator resume after restart
+    trigger:
+      - trigger: homeassistant
+        event: start
+    condition:
+      - condition: state
+        entity_id: input_boolean.presence_simulator
+        state: "on"
+      - condition: template
+        value_template: >
+          {% set use_sunset = is_state('input_boolean.presence_simulator_use_sunset', 'on') %}
+          {% set bedtime = states('input_datetime.presence_simulator_bedtime') %}
+          {% set start = states('input_datetime.presence_simulator_start') %}
+          {% set now_t = now().strftime('%H:%M:%S') %}
+          {% set after_start = is_state('sun.sun', 'below_horizon') if use_sunset else (now_t >= start) %}
+          {{ after_start and now_t < bedtime }}
+    action:
+      - action: script.turn_on
+        target:
+          entity_id: script.presence_simulator_loop
+
+  - id: presence_simulator_stop_bedtime
+    alias: Presence simulator stop at bedtime
+    trigger:
+      - trigger: time
+        at: input_datetime.presence_simulator_bedtime
+    action:
+      - action: script.turn_off
+        target:
+          entity_id: script.presence_simulator_loop
+      - action: light.turn_off
+        target:
+          entity_id: light.presence_simulator_lights
+
+  - id: presence_simulator_stop_on_switch
+    alias: Presence simulator stop on switch
+    trigger:
+      - trigger: state
+        entity_id: input_boolean.presence_simulator
+        to: "off"
+    action:
+      - action: script.turn_off
+        target:
+          entity_id: script.presence_simulator_loop
+      - if:
+          - condition: state
+            entity_id: input_boolean.presence_simulator_quiet_off
+            state: "on"
+        then:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.presence_simulator_quiet_off
+        else:
+          - action: light.turn_off
+            target:
+              entity_id: light.presence_simulator_lights
+
+  - id: presence_simulator_auto_away_evaluate
+    alias: Presence simulator auto away evaluate
+    mode: restart
+    trigger:
+      - trigger: event
+        event_type: state_changed
+      - trigger: time_pattern
+        minutes: "/1"
+      - trigger: homeassistant
+        event: start
+      - trigger: state
+        entity_id:
+          - input_boolean.presence_simulator_auto_away
+          - input_number.presence_simulator_away_miles
+          - input_select.presence_simulator_distance_unit
+          - input_boolean.presence_simulator_auto_holdoff
+          - input_boolean.presence_simulator_confirm_off_pending
+    condition:
+      - condition: template
+        value_template: >
+          {% if trigger.platform == 'event' %}
+            {{ trigger.event.data.entity_id is match('^person\\.') }}
+          {% else %}
+            true
+          {% endif %}
+    action:
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: >
+                  {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+                  {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+                  {% set ns = namespace(home=false) %}
+                  {% if states.zone.home is not none %}
+                    {% for p in states.person %}
+                      {% set lat = state_attr(p.entity_id, 'latitude') %}
+                      {% set lon = state_attr(p.entity_id, 'longitude') %}
+                      {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                        {% set ns.home = true %}
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  {{ ns.home }}
+            sequence:
+              - action: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.presence_simulator_auto_holdoff
+              - action: input_boolean.turn_off
+                target:
+                  entity_id: input_boolean.presence_simulator_confirm_off_pending
+              - action: persistent_notification.dismiss
+                data:
+                  notification_id: presence_simulator_off_while_away
+              - if:
+                  - condition: state
+                    entity_id: input_boolean.presence_simulator_auto_away
+                    state: "on"
+                  - condition: state
+                    entity_id: input_boolean.presence_simulator
+                    state: "on"
+                then:
+                  - action: input_boolean.turn_on
+                    target:
+                      entity_id: input_boolean.presence_simulator_quiet_off
+                  - action: input_boolean.turn_off
+                    target:
+                      entity_id: input_boolean.presence_simulator
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.presence_simulator_auto_away
+                state: "on"
+              - condition: state
+                entity_id: input_boolean.presence_simulator_auto_holdoff
+                state: "off"
+              - condition: state
+                entity_id: input_boolean.presence_simulator_confirm_off_pending
+                state: "off"
+              - condition: template
+                value_template: >
+                  {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+                  {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+                  {% set people = states.person %}
+                  {% if states.zone.home is none or people | count == 0 %}
+                    false
+                  {% else %}
+                    {% set ns = namespace(all_away=true) %}
+                    {% for p in people %}
+                      {% set lat = state_attr(p.entity_id, 'latitude') %}
+                      {% set lon = state_attr(p.entity_id, 'longitude') %}
+                      {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                        {% set ns.all_away = false %}
+                      {% endif %}
+                    {% endfor %}
+                    {{ ns.all_away }}
+                  {% endif %}
+            sequence:
+              - action: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.presence_simulator
+
+  - id: presence_simulator_manual_off_while_away
+    alias: Presence simulator manual off while away
+    mode: single
+    trigger:
+      - trigger: state
+        entity_id: input_boolean.presence_simulator
+        to: "off"
+    condition:
+      - condition: state
+        entity_id: input_boolean.presence_simulator_auto_away
+        state: "on"
+      - condition: state
+        entity_id: input_boolean.presence_simulator_quiet_off
+        state: "off"
+      - condition: template
+        value_template: >
+          {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+          {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+          {% set people = states.person %}
+          {% if states.zone.home is none or people | count == 0 %}
+            false
+          {% else %}
+            {% set ns = namespace(all_away=true) %}
+            {% for p in people %}
+              {% set lat = state_attr(p.entity_id, 'latitude') %}
+              {% set lon = state_attr(p.entity_id, 'longitude') %}
+              {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                {% set ns.all_away = false %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.all_away }}
+          {% endif %}
+    action:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.presence_simulator_confirm_off_pending
+      - if:
+          - condition: template
+            value_template: >
+              {{ states('input_select.presence_simulator_ask_if_off_while_away') != 'Home Assistant' }}
+        then:
+          - action: notify.notify
+            continue_on_error: true
+            data:
+              title: Presence simulator
+              message: You turned Presence simulator off while still farther than Away distance (or GPS is unknown). Was that correct, or a mistake?
+              data:
+                actions:
+                  - action: PRESENCE_SIMULATOR_OFF_CORRECT
+                    title: Correct
+                  - action: PRESENCE_SIMULATOR_OFF_MISTAKE
+                    title: Mistake
+      - if:
+          - condition: template
+            value_template: >
+              {{ states('input_select.presence_simulator_ask_if_off_while_away') != 'Phone' }}
+        then:
+          - action: persistent_notification.create
+            data:
+              notification_id: presence_simulator_off_while_away
+              title: Presence simulator
+              message: You turned Presence simulator off while still farther than Away distance (or GPS is unknown). Was that correct, or a mistake? Use Off while away was correct / Off while away was a mistake on the Presence simulator menu.
+
+  - id: presence_simulator_confirm_off_correct
+    alias: Presence simulator confirm off correct
+    mode: single
+    trigger:
+      - trigger: state
+        entity_id: input_button.presence_simulator_off_correct
+      - trigger: event
+        event_type: mobile_app_notification_action
+        event_data:
+          action: PRESENCE_SIMULATOR_OFF_CORRECT
+    condition:
+      - condition: template
+        value_template: "{{ trigger.platform != 'state' or trigger.from_state is not none }}"
+      - condition: state
+        entity_id: input_boolean.presence_simulator_confirm_off_pending
+        state: "on"
+    action:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.presence_simulator_auto_holdoff
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.presence_simulator_confirm_off_pending
+      - action: persistent_notification.dismiss
+        data:
+          notification_id: presence_simulator_off_while_away
+
+  - id: presence_simulator_confirm_off_mistake
+    alias: Presence simulator confirm off mistake
+    mode: single
+    trigger:
+      - trigger: state
+        entity_id: input_button.presence_simulator_off_mistake
+      - trigger: event
+        event_type: mobile_app_notification_action
+        event_data:
+          action: PRESENCE_SIMULATOR_OFF_MISTAKE
+    condition:
+      - condition: template
+        value_template: "{{ trigger.platform != 'state' or trigger.from_state is not none }}"
+      - condition: state
+        entity_id: input_boolean.presence_simulator_confirm_off_pending
+        state: "on"
+    action:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.presence_simulator_confirm_off_pending
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.presence_simulator
+      - action: persistent_notification.dismiss
+        data:
+          notification_id: presence_simulator_off_while_away
+
+  - id: presence_simulator_distance_unit_convert
+    alias: Presence simulator distance unit convert
+    mode: single
+    trigger:
+      - trigger: state
+        entity_id: input_select.presence_simulator_distance_unit
+    condition:
+      - condition: template
+        value_template: >
+          {{ trigger.from_state is not none
+             and trigger.from_state.state != trigger.to_state.state
+             and trigger.from_state.state not in ['unknown', 'unavailable'] }}
+      - condition: template
+        value_template: >
+          {{ trigger.to_state.state == 'Kilometers (km)'
+             or trigger.to_state.state == 'Miles (mi)' }}
+    action:
+      - action: input_number.set_value
+        target:
+          entity_id: input_number.presence_simulator_away_miles
+        data:
+          value: >
+            {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+            {% set raw = dist * 1.609344 if trigger.to_state.state == 'Kilometers (km)' else dist / 1.609344 %}
+            {{ [[raw | round(1), 0.1] | max, 200] | min }}
+
