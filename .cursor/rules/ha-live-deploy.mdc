@@ -8,7 +8,7 @@ alwaysApply: true
 When the user asks to update files on Home Assistant, or after a package fix is ready:
 
 1. Wait for approval if Auto-review blocks the live write. After approval, continue the same path — do not stop.
-2. Open the HA UI at `http://192.168.68.72/` (port 80, not 8123). Use sidebar **Terminal** (`/a0d7b954_ssh`).
+2. Open the HA UI at `http://your ip address running HA/` (port 80, not 8123). Use sidebar **Terminal** (`/a0d7b954_ssh`).
 3. **Backup first:** `cp /config/packages/presence_simulator.yaml /config/packages/presence_simulator.yaml.bak`
 4. Copy `packages/presence_simulator.yaml` onto `/config/packages/presence_simulator.yaml` through that Terminal (short `echo` lines; zsh needs **Enter** after a multi-line paste).
 5. `ha core check`. If it succeeds, `ha core restart` so the running loop loads the new script.

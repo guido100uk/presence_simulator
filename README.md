@@ -37,7 +37,7 @@ If `homeassistant:` already exists, add only the `packages: !include_dir_named p
 
 ## Deploy a package update to the live house
 
-The running Home Assistant is at `http://192.168.68.72/` (port 80). Copy through the sidebar **Terminal** add-on, not by replacing `configuration.yaml`.
+The running Home Assistant is at `http://your ip address running HA/` (port 80). Copy through the sidebar **Terminal** add-on, not by replacing `configuration.yaml`.
 
 1. Backup: `cp /config/packages/presence_simulator.yaml /config/packages/presence_simulator.yaml.bak`
 2. Copy this repo’s `packages/presence_simulator.yaml` to `/config/packages/presence_simulator.yaml`

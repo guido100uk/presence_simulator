@@ -20,7 +20,7 @@
 - Question notification_id: `presence_simulator_off_while_away`. Mobile action ids: `PRESENCE_SIMULATOR_OFF_CORRECT`, `PRESENCE_SIMULATOR_OFF_MISTAKE`.
 - Do not install Proximity or extra zones. Do not change the loop member-expand fix (`state_attr` of the light group, never `expand('light.presence_simulator_lights')`).
 - Tests: `py -3 -m pytest tests/test_presence_simulator_package.py -v` (Windows; not `python`).
-- Live HA: `http://192.168.68.72/` port 80. Deploy via sidebar Terminal only. Do not replace live `configuration.yaml`. Do not read `hassTokens`.
+- Live HA: `http://your ip address running HA/` port 80. Deploy via sidebar Terminal only. Do not replace live `configuration.yaml`. Do not read `hassTokens`.
 
 ---
 
@@ -811,7 +811,7 @@ Expected: PASS. Do not deploy if tests fail.
 
 - [ ] **Step 2: Open live Terminal**
 
-Open `http://192.168.68.72/` (port 80). Sidebar **Terminal** (`/a0d7b954_ssh`). Wait if Auto-review blocks the live write; after approval, continue.
+Open `http://your ip address running HA/` (port 80). Sidebar **Terminal** (`/a0d7b954_ssh`). Wait if Auto-review blocks the live write; after approval, continue.
 
 - [ ] **Step 3: Backup**
 

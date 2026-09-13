@@ -19,7 +19,7 @@
 - Do **not** hard-code `person.*`, `device_tracker.*`, or `notify.mobile_app_*` entity IDs.
 - Do not change the loop member-expand fix. Do not replace live `configuration.yaml`. Do not read `hassTokens`.
 - Tests: `py -3 -m pytest tests/test_presence_simulator_package.py -v` (Windows; not `python`).
-- Live HA: `http://192.168.68.72/` port 80. Deploy via sidebar Terminal only.
+- Live HA: `http://your ip address running HA/` port 80. Deploy via sidebar Terminal only.
 
 ---
 
@@ -412,7 +412,7 @@ git commit -m "Put Distance unit on the Presence simulator menu and document con
 
 - [ ] **Step 1: Backup and copy package through HA Terminal**
 
-Open `http://192.168.68.72/` (port 80). Sidebar **Terminal** (`/a0d7b954_ssh`).
+Open `http://your ip address running HA/` (port 80). Sidebar **Terminal** (`/a0d7b954_ssh`).
 
 ```bash
 cp /config/packages/presence_simulator.yaml /config/packages/presence_simulator.yaml.bak
@@ -443,7 +443,7 @@ Prepend `handover.md` with the live copy sizes and that Distance unit is on the 
 
 ```bash
 git add handover.md
-git commit -m "Note live Distance unit deploy on 192.168.68.72."
+git commit -m "Note live Distance unit deploy on your ip address running HA."
 git push
 ```
 
