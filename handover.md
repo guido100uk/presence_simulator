@@ -2,6 +2,10 @@
 
 ## Changelog
 
+### 2026-09-26 19:44 — README screenshot and coffee button
+- Added the live Presence simulator dashboard image at the top of `README.md` (`presence-simulator.png`).
+- Added a Buy Me a Coffee button at the bottom using the GitHub-safe yellow image (the button-api query URL does not render on GitHub).
+
 ### 2026-09-13 18:58 — Placeholder HA address
 - Docs and deploy notes use `your ip address running HA` instead of a house-specific IP. Did not change the running Home Assistant instance.
 

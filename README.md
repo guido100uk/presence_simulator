@@ -2,6 +2,8 @@
 
 Evening light schedule plus a manual presence simulator. While **Presence simulator** is on, Home Assistant randomly turns lights in one group on and off from sunset (or a start time you set) until bedtime, then turns that group off.
 
+![Presence simulator dashboard in Home Assistant](./presence-simulator.png)
+
 **Auto away** can turn the master switch on when every `person` is farther than **Away distance** with **Distance unit** **Miles (mi)** or **Kilometers (km)** (default Miles (mi)), or GPS is unknown, and off when someone with GPS is within that distance; switching units converts the number so the GPS radius stays the same; lights stay as they are on return.
 
 This repo is YAML helpers, a loop script, and automations. It is **not** the HACS **Presence Simulation** integration.
@@ -118,3 +120,9 @@ If the group is empty, nothing is toggled. If a member is unavailable, it is ski
 - **Auto away on**, leave beyond 1 mile (or ~1.6 km if Distance unit is Kilometers (km)) → master switch turns on after GPS updates (the loop still waits for the evening window).
 - Return within that Away distance → master switch off; grouped lights stay as they are.
 - Manual off while away → question on Phone / Home Assistant / Both; **Correct** stays off until someone comes home; **Mistake** turns the switch back on.
+
+<p align="left">
+  <a href="https://www.buymeacoffee.com/guido_guido">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy me a coffee" />
+  </a>
+</p>
