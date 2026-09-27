@@ -44,7 +44,7 @@ The running Home Assistant is at `http://your ip address running HA/` (port 80).
 2. Copy this repo’s `packages/presence_simulator.yaml` to `/config/packages/presence_simulator.yaml`
 3. `ha core check`
 4. `ha core restart` so the loop script reloads
-5. Commit and push the same change to GitHub
+
 
 **Overview / Home will not show these helpers.** That screen lists lights and other devices by area, not `input_datetime` helpers.
 
@@ -61,8 +61,6 @@ Then create the light group in the UI if it does not already exist:
 - Add the lights you want simulated. Do not add lights you do not want changed.
 
 Open **Presence simulator use sunset** and turn it **on** (recommended). If you prefer a fixed start, leave it off and set **Presence simulator start** (default 18:00). Set **Presence simulator bedtime** (default 23:00, same calendar evening). Set min/max minutes between changes if you want (defaults 5 and 25).
-
-This GitHub repo is private, so `raw.githubusercontent.com` will 404 without auth. Copy files from a clone, not from a raw URL.
 
 ## This folder as a standalone config
 
