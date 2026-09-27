@@ -8,7 +8,6 @@ Evening light schedule plus a manual presence simulator. While **Presence simula
 
 This repo is YAML helpers, a loop script, and automations. It is **not** the HACS **Presence Simulation** integration.
 
-Heating oil (Watchman SENSiT gauge, price scrape, order cost) lives in a separate repo: [Kingspan_Heating_Oil_gauge](https://github.com/guido100uk/Kingspan_Heating_Oil_gauge). The older combined tree is archived at [home_assistant](https://github.com/guido100uk/home_assistant).
 
 ## Install on an existing Home Assistant
 
