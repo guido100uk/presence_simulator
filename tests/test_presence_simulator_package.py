@@ -81,7 +81,7 @@ def test_loop_script_gates_on_switch_and_same_day_window(package):
     blob = _script_blob(package)
     assert "input_boolean.presence_simulator" in blob
     assert "presence_simulator_use_sunset" in blob
-    assert "below_horizon" in blob
+    assert "next_setting" in blob
     assert "presence_simulator_start" in blob
     assert "presence_simulator_bedtime" in blob
 
@@ -124,6 +124,7 @@ REQUIRED_AUTOMATION_IDS = {
     "presence_simulator_start_time",
     "presence_simulator_start_on_switch",
     "presence_simulator_resume_on_start",
+    "presence_simulator_keep_alive",
     "presence_simulator_stop_bedtime",
     "presence_simulator_stop_on_switch",
 }
@@ -180,8 +181,17 @@ def test_switch_and_restart_gate_on_window(package):
         "presence_simulator_resume_on_start",
     ):
         blob = yaml_dump_section(_automations(package)[key])
-        assert "below_horizon" in blob
+        assert "next_setting" in blob
         assert "presence_simulator_bedtime" in blob
+
+
+def test_keep_alive_restarts_idle_loop_in_window(package):
+    blob = yaml_dump_section(_automations(package)["presence_simulator_keep_alive"])
+    assert "time_pattern" in blob
+    assert "script.presence_simulator_loop" in blob
+    assert "script.turn_on" in blob
+    assert "next_setting" in blob
+    assert "input_boolean.presence_simulator" in blob
 
 
 def test_stop_automations_abort_script_and_turn_group_off(package):
@@ -194,6 +204,18 @@ def test_stop_automations_abort_script_and_turn_group_off(package):
     assert "light.presence_simulator_lights" in bedtime
     assert "script.turn_off" in switch_off and "light.turn_off" in switch_off
     assert "light.presence_simulator_lights" in switch_off
+
+
+def test_stop_bedtime_requires_simulator_on(package):
+    bedtime = _automations(package)["presence_simulator_stop_bedtime"]
+    blob = yaml_dump_section(bedtime)
+    assert "input_boolean.presence_simulator" in blob
+    conditions = bedtime.get("condition") or []
+    assert any(
+        item.get("entity_id") == "input_boolean.presence_simulator"
+        and str(item.get("state")) == "on"
+        for item in conditions
+    )
 
 
 def test_stop_on_switch_skips_group_off_when_quiet_off(package):
@@ -229,6 +251,9 @@ def test_presence_simulator_dashboard_shows_start_and_bedtime():
         blob = yaml.safe_dump(data, sort_keys=False)
         assert "input_datetime.presence_simulator_start" in blob
         assert "input_datetime.presence_simulator_bedtime" in blob
+        assert "light.presence_simulator_lights" in blob
+        assert "/config/helpers" in blob
+        assert "Add or remove lights" in blob
 
 
 def test_readme_covers_install_and_smoke_test():
@@ -368,6 +393,9 @@ def test_dashboard_shows_auto_away_controls_not_internals():
         assert "input_boolean.presence_simulator_auto_holdoff" not in blob
         assert "input_boolean.presence_simulator_quiet_off" not in blob
         assert "input_boolean.presence_simulator_confirm_off_pending" not in blob
+        assert "light.presence_simulator_lights" in blob
+        assert "/config/helpers" in blob
+        assert "Add or remove lights" in blob
 
 
 def test_readme_covers_auto_away():

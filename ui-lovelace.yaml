@@ -8,6 +8,15 @@ views:
         title: Presence simulator
         show_header_toggle: false
         entities:
+          - type: button
+            name: Add or remove lights
+            icon: mdi:lightbulb-group-outline
+            action_name: Open
+            tap_action:
+              action: navigate
+              navigation_path: /config/helpers
+          - entity: light.presence_simulator_lights
+            name: Simulator lights
           - entity: input_boolean.presence_simulator
             name: Presence simulator
           - entity: input_boolean.presence_simulator_use_sunset

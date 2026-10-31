@@ -96,8 +96,18 @@ script:
                 {% set bedtime = states('input_datetime.presence_simulator_bedtime') %}
                 {% set start = states('input_datetime.presence_simulator_start') %}
                 {% set now_t = now().strftime('%H:%M:%S') %}
-                {% set after_start = is_state('sun.sun', 'below_horizon') if use_sunset else (now_t >= start) %}
-                {% set before_bed = now_t < bedtime %}
+                {% if use_sunset %}
+                  {% set next_set = state_attr('sun.sun', 'next_setting') %}
+                  {% if next_set %}
+                    {% set sunset_dt = as_local(as_datetime(next_set)) %}
+                    {% set after_start = sunset_dt.date() != now().date() or now() >= sunset_dt %}
+                  {% else %}
+                    {% set after_start = false %}
+                  {% endif %}
+                {% else %}
+                  {% set after_start = now_t >= start %}
+                {% endif %}
+                {% set before_bed = bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime %}
                 {{ is_state('input_boolean.presence_simulator', 'on')
                    and after_start and before_bed }}
           sequence:
@@ -195,8 +205,18 @@ automation:
           {% set bedtime = states('input_datetime.presence_simulator_bedtime') %}
           {% set start = states('input_datetime.presence_simulator_start') %}
           {% set now_t = now().strftime('%H:%M:%S') %}
-          {% set after_start = is_state('sun.sun', 'below_horizon') if use_sunset else (now_t >= start) %}
-          {{ after_start and now_t < bedtime }}
+          {% if use_sunset %}
+            {% set next_set = state_attr('sun.sun', 'next_setting') %}
+            {% if next_set %}
+              {% set sunset_dt = as_local(as_datetime(next_set)) %}
+              {% set after_start = sunset_dt.date() != now().date() or now() >= sunset_dt %}
+            {% else %}
+              {% set after_start = false %}
+            {% endif %}
+          {% else %}
+            {% set after_start = now_t >= start %}
+          {% endif %}
+          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime }}
     action:
       - action: script.turn_on
         target:
@@ -217,8 +237,53 @@ automation:
           {% set bedtime = states('input_datetime.presence_simulator_bedtime') %}
           {% set start = states('input_datetime.presence_simulator_start') %}
           {% set now_t = now().strftime('%H:%M:%S') %}
-          {% set after_start = is_state('sun.sun', 'below_horizon') if use_sunset else (now_t >= start) %}
-          {{ after_start and now_t < bedtime }}
+          {% if use_sunset %}
+            {% set next_set = state_attr('sun.sun', 'next_setting') %}
+            {% if next_set %}
+              {% set sunset_dt = as_local(as_datetime(next_set)) %}
+              {% set after_start = sunset_dt.date() != now().date() or now() >= sunset_dt %}
+            {% else %}
+              {% set after_start = false %}
+            {% endif %}
+          {% else %}
+            {% set after_start = now_t >= start %}
+          {% endif %}
+          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime }}
+    action:
+      - action: script.turn_on
+        target:
+          entity_id: script.presence_simulator_loop
+
+  - id: presence_simulator_keep_alive
+    alias: Presence simulator keep alive
+    trigger:
+      - trigger: time_pattern
+        minutes: "/5"
+    condition:
+      - condition: state
+        entity_id: input_boolean.presence_simulator
+        state: "on"
+      - condition: state
+        entity_id: script.presence_simulator_loop
+        state: "off"
+      - condition: template
+        value_template: >
+          {% set use_sunset = is_state('input_boolean.presence_simulator_use_sunset', 'on') %}
+          {% set bedtime = states('input_datetime.presence_simulator_bedtime') %}
+          {% set start = states('input_datetime.presence_simulator_start') %}
+          {% set now_t = now().strftime('%H:%M:%S') %}
+          {% if use_sunset %}
+            {% set next_set = state_attr('sun.sun', 'next_setting') %}
+            {% if next_set %}
+              {% set sunset_dt = as_local(as_datetime(next_set)) %}
+              {% set after_start = sunset_dt.date() != now().date() or now() >= sunset_dt %}
+            {% else %}
+              {% set after_start = false %}
+            {% endif %}
+          {% else %}
+            {% set after_start = now_t >= start %}
+          {% endif %}
+          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime }}
     action:
       - action: script.turn_on
         target:
@@ -229,6 +294,10 @@ automation:
     trigger:
       - trigger: time
         at: input_datetime.presence_simulator_bedtime
+    condition:
+      - condition: state
+        entity_id: input_boolean.presence_simulator
+        state: "on"
     action:
       - action: script.turn_off
         target:

@@ -60,6 +60,8 @@ Then create the light group in the UI if it does not already exist:
 - Name: `Presence simulator lights` (entity ID must be `light.presence_simulator_lights`)
 - Add the lights you want simulated. Do not add lights you do not want changed.
 
+The Presence simulator page has **Add or remove lights**, which opens Helpers so you can change group members without hunting through Settings.
+
 Open **Presence simulator use sunset** and turn it **on** (recommended). If you prefer a fixed start, leave it off and set **Presence simulator start** (default 18:00). Set **Presence simulator bedtime** (default 23:00, same calendar evening). Set min/max minutes between changes if you want (defaults 5 and 25).
 
 ## This folder as a standalone config

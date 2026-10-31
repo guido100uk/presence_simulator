@@ -2,6 +2,11 @@
 
 ## Changelog
 
+### 2026-10-31 16:00 — Sunset loop race and helpers shortcut
+- Evening window no longer uses `below_horizon` (that raced the sunset trigger and aborted the loop).
+- Keep-alive restarts an idle loop every 5 minutes in the evening window.
+- Setup page: **Add or remove lights** → `/config/helpers`.
+
 ### 2026-09-26 19:44 — README screenshot and coffee button
 - Added the live Presence simulator dashboard image at the top of `README.md` (`presence-simulator.png`).
 - Added a Buy Me a Coffee button at the bottom using the GitHub-safe yellow image (the button-api query URL does not render on GitHub).
