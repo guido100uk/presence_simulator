@@ -108,8 +108,20 @@ script:
                   {% set after_start = now_t >= start %}
                 {% endif %}
                 {% set before_bed = bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime %}
+                {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+                {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+                {% set ns = namespace(someone_home=false) %}
+                {% if states.zone.home is not none %}
+                  {% for p in states.person %}
+                    {% set lat = state_attr(p.entity_id, 'latitude') %}
+                    {% set lon = state_attr(p.entity_id, 'longitude') %}
+                    {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                      {% set ns.someone_home = true %}
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
                 {{ is_state('input_boolean.presence_simulator', 'on')
-                   and after_start and before_bed }}
+                   and after_start and before_bed and not ns.someone_home }}
           sequence:
             - variables:
                 members: >
@@ -167,6 +179,21 @@ automation:
       - condition: template
         value_template: >
           {{ now().strftime('%H:%M:%S') < states('input_datetime.presence_simulator_bedtime') }}
+      - condition: template
+        value_template: >
+          {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+          {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+          {% set ns = namespace(someone_home=false) %}
+          {% if states.zone.home is not none %}
+            {% for p in states.person %}
+              {% set lat = state_attr(p.entity_id, 'latitude') %}
+              {% set lon = state_attr(p.entity_id, 'longitude') %}
+              {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                {% set ns.someone_home = true %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ not ns.someone_home }}
     action:
       - action: script.turn_on
         target:
@@ -187,6 +214,21 @@ automation:
       - condition: template
         value_template: >
           {{ now().strftime('%H:%M:%S') < states('input_datetime.presence_simulator_bedtime') }}
+      - condition: template
+        value_template: >
+          {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+          {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+          {% set ns = namespace(someone_home=false) %}
+          {% if states.zone.home is not none %}
+            {% for p in states.person %}
+              {% set lat = state_attr(p.entity_id, 'latitude') %}
+              {% set lon = state_attr(p.entity_id, 'longitude') %}
+              {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                {% set ns.someone_home = true %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ not ns.someone_home }}
     action:
       - action: script.turn_on
         target:
@@ -216,7 +258,19 @@ automation:
           {% else %}
             {% set after_start = now_t >= start %}
           {% endif %}
-          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime }}
+          {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+          {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+          {% set ns = namespace(someone_home=false) %}
+          {% if states.zone.home is not none %}
+            {% for p in states.person %}
+              {% set lat = state_attr(p.entity_id, 'latitude') %}
+              {% set lon = state_attr(p.entity_id, 'longitude') %}
+              {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                {% set ns.someone_home = true %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime and not ns.someone_home }}
     action:
       - action: script.turn_on
         target:
@@ -248,7 +302,19 @@ automation:
           {% else %}
             {% set after_start = now_t >= start %}
           {% endif %}
-          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime }}
+          {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+          {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+          {% set ns = namespace(someone_home=false) %}
+          {% if states.zone.home is not none %}
+            {% for p in states.person %}
+              {% set lat = state_attr(p.entity_id, 'latitude') %}
+              {% set lon = state_attr(p.entity_id, 'longitude') %}
+              {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                {% set ns.someone_home = true %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime and not ns.someone_home }}
     action:
       - action: script.turn_on
         target:
@@ -283,11 +349,54 @@ automation:
           {% else %}
             {% set after_start = now_t >= start %}
           {% endif %}
-          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime }}
+          {% set dist = states('input_number.presence_simulator_away_miles') | float(1) %}
+          {% set km = dist * 1.609344 if states('input_select.presence_simulator_distance_unit') == 'Miles (mi)' else dist %}
+          {% set ns = namespace(someone_home=false) %}
+          {% if states.zone.home is not none %}
+            {% for p in states.person %}
+              {% set lat = state_attr(p.entity_id, 'latitude') %}
+              {% set lon = state_attr(p.entity_id, 'longitude') %}
+              {% if lat is not none and lon is not none and distance('zone.home', p.entity_id) <= km %}
+                {% set ns.someone_home = true %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime and not ns.someone_home }}
     action:
       - action: script.turn_on
         target:
           entity_id: script.presence_simulator_loop
+
+  - id: presence_simulator_evening_lights_on
+    alias: Presence simulator evening lights on
+    trigger:
+      - trigger: sun
+        event: sunset
+      - trigger: homeassistant
+        event: start
+      - trigger: state
+        entity_id: input_boolean.presence_simulator_use_sunset
+        to: "on"
+    condition:
+      - condition: state
+        entity_id: input_boolean.presence_simulator_use_sunset
+        state: "on"
+      - condition: template
+        value_template: >
+          {% set bedtime = states('input_datetime.presence_simulator_bedtime') %}
+          {% set now_t = now().strftime('%H:%M:%S') %}
+          {% set next_set = state_attr('sun.sun', 'next_setting') %}
+          {% if next_set %}
+            {% set sunset_dt = as_local(as_datetime(next_set)) %}
+            {% set after_start = sunset_dt.date() != now().date() or now() >= sunset_dt %}
+          {% else %}
+            {% set after_start = false %}
+          {% endif %}
+          {{ after_start and bedtime not in ['unknown', 'unavailable', ''] and now_t < bedtime }}
+    action:
+      - action: light.turn_on
+        target:
+          entity_id: light.presence_simulator_lights
 
   - id: presence_simulator_stop_bedtime
     alias: Presence simulator stop at bedtime

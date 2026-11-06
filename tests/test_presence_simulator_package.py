@@ -86,6 +86,14 @@ def test_loop_script_gates_on_switch_and_same_day_window(package):
     assert "presence_simulator_bedtime" in blob
 
 
+def test_loop_script_does_not_run_when_someone_is_home(package):
+    blob = _script_blob(package)
+    assert "someone_home" in blob
+    assert "states.person" in blob
+    assert "zone.home" in blob
+    assert "distance(" in blob
+
+
 def test_loop_script_skips_empty_or_unavailable_group(package):
     blob = _script_blob(package)
     assert "light.presence_simulator_lights" in blob
@@ -125,6 +133,7 @@ REQUIRED_AUTOMATION_IDS = {
     "presence_simulator_start_on_switch",
     "presence_simulator_resume_on_start",
     "presence_simulator_keep_alive",
+    "presence_simulator_evening_lights_on",
     "presence_simulator_stop_bedtime",
     "presence_simulator_stop_on_switch",
 }
@@ -185,6 +194,27 @@ def test_switch_and_restart_gate_on_window(package):
         assert "presence_simulator_bedtime" in blob
 
 
+def test_loop_starters_skip_when_someone_is_home(package):
+    autos = _automations(package)
+    for key in (
+        "presence_simulator_start_sunset",
+        "presence_simulator_start_time",
+        "presence_simulator_start_on_switch",
+        "presence_simulator_resume_on_start",
+        "presence_simulator_keep_alive",
+    ):
+        blob = yaml_dump_section(autos[key])
+        assert "someone_home" in blob, key
+        assert "states.person" in blob, key
+        assert "script.turn_on" in blob, key
+
+
+def test_evening_lights_on_still_runs_when_home(package):
+    blob = yaml_dump_section(_automations(package)["presence_simulator_evening_lights_on"])
+    assert "someone_home" not in blob
+    assert "light.turn_on" in blob
+
+
 def test_keep_alive_restarts_idle_loop_in_window(package):
     blob = yaml_dump_section(_automations(package)["presence_simulator_keep_alive"])
     assert "time_pattern" in blob
@@ -204,6 +234,24 @@ def test_stop_automations_abort_script_and_turn_group_off(package):
     assert "light.presence_simulator_lights" in bedtime
     assert "script.turn_off" in switch_off and "light.turn_off" in switch_off
     assert "light.presence_simulator_lights" in switch_off
+
+
+def test_evening_lights_on_at_sunset_without_master_switch(package):
+    evening = _automations(package)["presence_simulator_evening_lights_on"]
+    blob = yaml_dump_section(evening)
+    assert "sunset" in blob
+    assert "homeassistant" in blob
+    assert "presence_simulator_use_sunset" in blob
+    assert "next_setting" in blob
+    assert "presence_simulator_bedtime" in blob
+    assert "light.turn_on" in blob
+    assert "light.presence_simulator_lights" in blob
+    assert "script.presence_simulator_loop" not in blob
+    conditions = evening.get("condition") or []
+    assert not any(
+        item.get("entity_id") == "input_boolean.presence_simulator"
+        for item in conditions
+    )
 
 
 def test_stop_bedtime_requires_simulator_on(package):

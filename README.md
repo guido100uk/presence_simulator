@@ -1,6 +1,6 @@
 # Home Assistant presence simulator
 
-Evening light schedule plus a manual presence simulator. While **Presence simulator** is on, Home Assistant randomly turns lights in one group on and off from sunset (or a start time you set) until bedtime, then turns that group off.
+Evening light schedule plus a manual presence simulator. When **Presence simulator use sunset** is on, sunset (or a restart after sunset) turns the group **on** even if you are home. The random on/off loop only runs when **Presence simulator** is on **and nobody is home**. If you are home, lights you switch stay as you left them.
 
 ![Presence simulator dashboard in Home Assistant](./presence-simulator.png)
 
@@ -88,7 +88,7 @@ For a new Home Assistant (or `docker-compose.yml` in this repo), you can use the
 | Entity | Default | Purpose |
 | --- | --- | --- |
 | `input_boolean.presence_simulator` | off | Master switch |
-| `input_boolean.presence_simulator_use_sunset` | off until you enable it | Start at sunset when on |
+| `input_boolean.presence_simulator_use_sunset` | off until you enable it | Turn the group on at sunset, even when home |
 | `input_datetime.presence_simulator_start` | 18:00 after you set it | Fixed start when sunset is off |
 | `input_datetime.presence_simulator_bedtime` | 23:00 after you set it | All grouped lights off |
 | `input_number.presence_simulator_min_minutes` | 5 | Minimum wait |
@@ -107,9 +107,10 @@ People need the **Companion** app (or another GPS tracker linked to a `person` e
 
 1. Put at least one real light in **Presence simulator lights**.
 2. Set start a minute or two in the past (or wait until after sunset if Use sunset is on) and bedtime later tonight.
-3. Turn **Presence simulator** **on**. A grouped light should change within the min/max window (for a quick test, set min and max to 1).
-4. Switch off **Presence simulator**. Every light in the group should turn off.
-5. Lights that are not in the group must stay as you left them.
+3. With **Use sunset** on and **Presence simulator** off after sunset, the group should turn on.
+4. Turn **Presence simulator** **on**. A grouped light should change within the min/max window (for a quick test, set min and max to 1).
+5. Switch off **Presence simulator**. Every light in the group should turn off.
+6. Lights that are not in the group must stay as you left them.
 
 If the group is empty, nothing is toggled. If a member is unavailable, it is skipped.
 

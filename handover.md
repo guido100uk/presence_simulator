@@ -2,6 +2,18 @@
 
 ## Changelog
 
+### 2026-11-06 18:40 — Lights work normally when home
+- Loop no longer starts or continues when anyone is within Away distance of home.
+- Sunset still turns the group on while you are home.
+
+### 2026-10-31 17:40 — Sunset turns evening lights on while home
+- Use sunset turns the group on at sunset / HA start after sunset, even when home and the master switch is off.
+- Random loop still needs **Presence simulator** on.
+
+### 2026-10-31 16:12 — Deploy sunset fix and push
+- Pushed the sunset-loop + helpers-link commit after rebasing onto remote README updates (`b3d4bca`).
+- Live HA: package patched, dashboard copied, `ha core check` passed, restart submitted.
+
 ### 2026-10-31 16:00 — Sunset loop race and helpers shortcut
 - Evening window no longer uses `below_horizon` (that raced the sunset trigger and aborted the loop).
 - Keep-alive restarts an idle loop every 5 minutes in the evening window.
